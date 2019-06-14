@@ -2,21 +2,44 @@
 
 #include <QFile>
 #include <QTextStream>
+#include <QMetaProperty>
+
+#define VERSAO 17
 
 TcpClient::TcpClient(QObject *parent)
     : QObject(parent)
     , socket(new QTcpSocket(this))
 {
-    connect(socket, &QAbstractSocket::connected, this, &TcpClient::connected);
-    connect(socket, &QAbstractSocket::disconnected, this, &TcpClient::disconnected);
-    connect(socket, &QIODevice::readyRead, this, &TcpClient::readData);
-    connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
-    connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &TcpClient::displayError);
+    qDebug("Versão %d", VERSAO);
+    qDebug() << "thread TcpClient " << thread();
 }
 
 TcpClient::~TcpClient()
 {
     CloseSocket();
+}
+
+void TcpClient::Init(QString servidor, quint16 porta)
+{
+    //QEventLoop loop;
+
+    //qDebug("init loop");
+
+    connect(socket, &QAbstractSocket::connected, this, &TcpClient::connected);
+    connect(socket, &QAbstractSocket::disconnected, this, &TcpClient::disconnected);
+    connect(socket, &QIODevice::readyRead, this, &TcpClient::readData);
+    connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
+    connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &TcpClient::displayError);
+
+    //qDebug("after connect");
+
+    Open(servidor, porta);
+
+    //qDebug("after open");
+
+    //loop.exec();
+
+    //qDebug("finish loop");
 }
 
 bool TcpClient::Open(QString servidor, quint16 porta)
@@ -31,8 +54,6 @@ bool TcpClient::Open()
     bool ret = false;
     try
     {
-        qDebug() << "versão 9.0";
-
         socket->connectToHost(Servidor, Porta);
         if(!socket->waitForConnected(5000))
         {
@@ -69,7 +90,7 @@ void TcpClient::ReadDataUser()
         stream << s_data << endl;
         file.close();
     }
-    qDebug() << "ReadDataUser " << s_data;
+    qDebug() << s_data;
 }
 
 void TcpClient::CloseSocket()

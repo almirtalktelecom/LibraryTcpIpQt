@@ -25,11 +25,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+        mythread.cpp \
         novalib.cpp \
         tcpclient.cpp \
         wrappertcpclient.cpp
 
 HEADERS += \
+        mythread.h \
         novalib.h \
         novalib_global.h  \
         tcpclient.h \

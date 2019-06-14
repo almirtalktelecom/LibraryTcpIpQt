@@ -17,7 +17,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        main.cpp
+        main.cpp \
+        mythread.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -30,3 +31,6 @@ else:unix: LIBS += -L$$PWD/../../lib/build-NovaLib-Desktop_Qt_5_12_2_MSVC2017_64
 
 INCLUDEPATH += $$PWD/../../lib/NovaLib
 DEPENDPATH += $$PWD/../../lib/NovaLib
+
+HEADERS += \
+    mythread.h

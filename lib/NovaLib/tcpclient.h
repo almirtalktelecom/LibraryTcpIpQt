@@ -8,8 +8,9 @@
 #include <QTcpSocket>
 #include <QAbstractSocket>
 #include <QString>
+#include <QEventLoop>
 
-class QTcpSocket;
+//class QTcpSocket;
 //class QNetworkSession;
 
 class NOVALIBSHARED_EXPORT TcpClient : public QObject
@@ -24,8 +25,11 @@ public:
     quint16 Porta = 0;
     QString Servidor;
 
+    QTcpSocket *socket = nullptr;
+
     bool Open();
     bool Open(QString servidor, quint16 porta);
+    void Init(QString servidor, quint16 porta);
     void CloseSocket();
     qint64 Send(int len, char *p);
     void ReadDataUser();
@@ -39,7 +43,7 @@ private slots:
     void displayError(QAbstractSocket::SocketError socketError);
 
 private:
-    QTcpSocket *socket = nullptr;
+    //QTcpSocket *socket = nullptr;
 };
 
 #endif // TCPCLIENT_H

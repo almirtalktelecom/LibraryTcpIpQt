@@ -1,7 +1,10 @@
 #ifndef WRAPPERTCPCLIENT_H
 #define WRAPPERTCPCLIENT_H
 
+#include <QCoreApplication>
+
 #include "tcpclient.h"
+#include "mythread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,11 +12,11 @@ extern "C" {
 
 extern __declspec(dllexport) TcpClient* CreateTcpClient();
 
-extern __declspec(dllexport) void Open(TcpClient* a_pObject,char *servidor, int porta);
+extern __declspec(dllexport) MyThread* CreateMyThread();
 
-extern __declspec(dllexport) void Send(TcpClient* a_pObject,int len, char *p);
+extern __declspec(dllexport) void InitClient(MyThread* thread);
 
-extern __declspec(dllexport) void ReadData(TcpClient* a_pObject);
+extern __declspec(dllexport) void SendExt(MyThread* thread,int len, char *p);
 
 #ifdef __cplusplus
 }
