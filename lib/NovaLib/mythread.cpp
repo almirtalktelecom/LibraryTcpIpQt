@@ -28,12 +28,17 @@ MyThread::MyThread(QObject *parent) :
     tcpClient->Open();
 }*/
 
+///// https://forum.qt.io/topic/99329/qsocketnotifier-socket-notifiers-cannot-be-enabled-or-disabled-from-another-thread
+
 void MyThread::run()
 {
     // thread starts here
     socket = new QTcpSocket();
     qDebug() << "Thread started - " << this->thread();
     qDebug() << "socket thread  - " << socket->thread();
+
+    //moveToThread(socket->thread());
+    //socket->moveToThread(this);
 
     // connect socket and signal
     // note - Qt::DirectConnection is used because it's multithreaded
@@ -42,7 +47,7 @@ void MyThread::run()
     connect(socket, &QAbstractSocket::disconnected, this, &MyThread::disconnected);
     connect(socket, &QIODevice::readyRead, this, &MyThread::readData, Qt::DirectConnection);
     connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
-    connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &MyThread::displayError);
+    //connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &MyThread::displayError);
 
     try
     {
@@ -65,6 +70,10 @@ void MyThread::run()
     // thread will stay alive so that signal/slot to function properly
     // not dropped out in the middle when thread dies
 
+    QByteArray data("Almir", 5);
+    socket->write(data.data(), data.size());
+    socket->flush();
+
     exec();
 }
 
@@ -80,6 +89,7 @@ void MyThread::disconnected()
 
 void MyThread::readData()
 {
+    qDebug() << "Class MyThread - readData!";
     ReadDataUser();
 }
 
@@ -119,6 +129,7 @@ qint64 MyThread::Send(int len, char *p)
             socket->flush();
             socket->waitForBytesWritten();
         }
+        qDebug() << "bytesSend " +  QString::number(bytesSend);
         return bytesSend;
     }
     catch (std::exception & e)

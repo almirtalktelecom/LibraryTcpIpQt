@@ -12,17 +12,71 @@ TcpClient* CreateTcpClient()
 }
 
 ///
+/// \brief InitClientExt
+/// \param client
+/// \param porta
+/// \param servidor
+/// \return
+///
+int InitClientExt(TcpClient* client,int porta, char *servidor)
+{
+    if(client != nullptr)
+    {
+        int len = 1;
+        char **argv = SetArgv(len, "LibraryQTCti");
+        QCoreApplication app(len, argv);
+        QThread *thread = new QThread ();
+
+        client->Porta = quint16(porta);
+        client->Servidor = servidor;
+
+        client->moveToThread(thread);
+        QObject::connect(thread, &QThread::started, client, &TcpClient::startconnection);
+        //QObject::connect(thread, &QThread::started, client, &TcpClient::LoopPacote);
+
+        QObject::connect(thread, &QThread::finished, client, &TcpClient::deleteLater);
+        QObject::connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+        thread->start();
+        return app.exec();
+    }
+    return -1;
+}
+
+void SetPacote(TcpClient* client,int len, char *p)
+{
+    if(client!= nullptr)
+    {
+        //client->SetPacote(len, p);
+        client->Send(len, p);
+    }
+}
+
+///
+/// \brief Send
+/// \param client
+/// \param len
+/// \param p
+///
+void Send(TcpClient* client,int len, char *p)
+{
+    if(client!= nullptr)
+    {
+        client->Send(len, p);
+    }
+}
+
+///
 /// \brief InitClient
 ///
-void InitClient(MyThread* thread)
+void InitClient(MyThread* thread,int porta, char *servidor)
 {
     int len = 1;
     char **argv = SetArgv(len, "LibraryQTCti");
 
     QCoreApplication app(len, argv);
 
-    thread->Porta = 44900;
-    thread->Servidor = "172.16.5.239";
+    thread->Porta = quint16(porta);
+    thread->Servidor = servidor;
 
     // connect signal/slot
     // once a thread is not needed, it will be beleted later

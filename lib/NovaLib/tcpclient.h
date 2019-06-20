@@ -9,6 +9,8 @@
 #include <QAbstractSocket>
 #include <QString>
 #include <QEventLoop>
+#include <QMutex>
+#include <QThread>
 
 //class QTcpSocket;
 //class QNetworkSession;
@@ -22,6 +24,8 @@ public:
     explicit TcpClient(QObject *parent = nullptr);
     ~TcpClient();
 
+    QList<QByteArray> ListPacotes;
+
     quint16 Porta = 0;
     QString Servidor;
 
@@ -32,17 +36,22 @@ public:
     void Init(QString servidor, quint16 porta);
     void CloseSocket();
     qint64 Send(int len, char *p);
+    void Send(QByteArray data);
     void ReadDataUser();
+    void SetPacote(int len, char *p);
 
-private slots:
+public slots:
 
+    void startconnection();
     void connected();
     void disconnected();
     void readData();
     void bytesWritten(qint64 bytes);
     void displayError(QAbstractSocket::SocketError socketError);
+    void LoopPacote();
 
 private:
+    QMutex LockSend;
     //QTcpSocket *socket = nullptr;
 };
 

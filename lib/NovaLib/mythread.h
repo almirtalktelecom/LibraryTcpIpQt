@@ -7,6 +7,7 @@
 #include <QThread>
 #include <QTcpSocket>
 #include <QDebug>
+#include <QString>
 
 class MyThread : public QThread
 {

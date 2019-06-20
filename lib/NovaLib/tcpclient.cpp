@@ -4,7 +4,7 @@
 #include <QTextStream>
 #include <QMetaProperty>
 
-#define VERSAO 17
+#define VERSAO 29
 
 TcpClient::TcpClient(QObject *parent)
     : QObject(parent)
@@ -17,6 +17,42 @@ TcpClient::TcpClient(QObject *parent)
 TcpClient::~TcpClient()
 {
     CloseSocket();
+}
+
+void TcpClient::startconnection()
+{
+    qDebug("TcpClient " Q_FUNC_INFO );
+    connect(socket, &QAbstractSocket::connected, this, &TcpClient::connected);
+    connect(socket, &QAbstractSocket::disconnected, this, &TcpClient::disconnected);
+    connect(socket, &QIODevice::readyRead, this, &TcpClient::readData);
+    connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
+    connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &TcpClient::displayError);
+    Open(Servidor, Porta);
+
+
+    QByteArray data("Almir dois", 10);
+    socket->write(data.data(), data.size());
+    socket->flush();
+}
+
+void TcpClient::LoopPacote()
+{
+    qDebug("TcpClient " Q_FUNC_INFO );
+    for (;;)
+    {
+        LockSend.lock();
+        if(!ListPacotes.isEmpty())
+        {
+            QByteArray data = ListPacotes.at(0);
+
+            qDebug() << "send... " << data;
+
+            Send(data);
+            ListPacotes.removeAt(0);
+        }
+        LockSend.unlock();
+        QThread::msleep(10);
+    }
 }
 
 void TcpClient::Init(QString servidor, quint16 porta)
@@ -63,6 +99,11 @@ bool TcpClient::Open()
         else {
             ret = true;
         }
+
+        //QByteArray data("Almir", 5);
+        //socket->write(data.data(), data.size());
+        //socket->flush();
+
         return ret;
     }
     catch (std::exception & e)
@@ -104,6 +145,31 @@ void TcpClient::CloseSocket()
     }
 }
 
+void TcpClient::SetPacote(int len, char *p)
+{
+    QByteArray data(p, len);
+
+    qDebug() << "SetPacote... " << data;
+
+    Send(len, p);
+
+    //LockSend.lock();
+    //ListPacotes.append(data);
+    //LockSend.unlock();
+}
+
+void TcpClient::Send(QByteArray data)
+{
+    qint64 bytesSend = socket->write(data.data(), data.size());
+    socket->flush();
+    while(socket->bytesToWrite() > 0)
+    {
+        bytesSend += socket->write( data.data()+bytesSend, data.size()-bytesSend );
+        socket->flush();
+        socket->waitForBytesWritten();
+    }
+}
+
 qint64 TcpClient::Send(int len, char *p)
 {
     try
@@ -132,6 +198,14 @@ qint64 TcpClient::Send(int len, char *p)
 void TcpClient::connected()
 {
     qDebug() << "Class TcpClient - Connected!";
+
+    /*QThread *thread = new QThread ();
+    //moveToThread(thread);
+    connect(thread, &QThread::started, this, &TcpClient::LoopPacote);
+    thread->start();
+
+    qDebug() << "Class TcpClient - liberou!";*/
+
 }
 
 void TcpClient::disconnected()
