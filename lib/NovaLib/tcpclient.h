@@ -7,13 +7,9 @@
 #include <QDebug>
 #include <QTcpSocket>
 #include <QAbstractSocket>
-#include <QString>
-#include <QEventLoop>
 #include <QMutex>
 #include <QThread>
-
-//class QTcpSocket;
-//class QNetworkSession;
+#include <QMetaProperty>
 
 class NOVALIBSHARED_EXPORT TcpClient : public QObject
 {
@@ -21,7 +17,7 @@ class NOVALIBSHARED_EXPORT TcpClient : public QObject
 
 public:
 
-    explicit TcpClient(QObject *parent = nullptr);
+    TcpClient(QObject *parent = nullptr,quint16 porta = 0,QString servidor = nullptr);
     ~TcpClient();
 
     QList<QByteArray> ListPacotes;
@@ -29,15 +25,14 @@ public:
     quint16 Porta = 0;
     QString Servidor;
 
-    QTcpSocket *socket = nullptr;
-
     bool Open();
-    bool Open(QString servidor, quint16 porta);
-    void Init(QString servidor, quint16 porta);
-    void CloseSocket();
+    //void CloseSocket();
+    void Finaliza();
+
     qint64 Send(int len, char *p);
-    void Send(QByteArray data);
+    qint64 Send(QByteArray data);
     void ReadDataUser();
+
     void SetPacote(int len, char *p);
 
 public slots:
@@ -50,9 +45,14 @@ public slots:
     void displayError(QAbstractSocket::SocketError socketError);
     void LoopPacote();
 
+signals:
+
+    void finished();
+
 private:
+    bool Finalizar;
     QMutex LockSend;
-    //QTcpSocket *socket = nullptr;
+    QTcpSocket *socket = nullptr;
 };
 
 #endif // TCPCLIENT_H
