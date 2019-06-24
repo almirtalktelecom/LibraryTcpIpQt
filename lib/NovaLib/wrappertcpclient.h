@@ -2,6 +2,7 @@
 #define WRAPPERTCPCLIENT_H
 
 #include <QCoreApplication>
+#include <QTime>
 
 #include "tcpclient.h"
 

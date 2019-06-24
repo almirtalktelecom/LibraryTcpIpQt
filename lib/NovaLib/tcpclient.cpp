@@ -77,6 +77,7 @@ void TcpClient::ReadDataUser()
 void TcpClient::finalizar()
 {
     qDebug() << "TcpClient::finalizar()";
+    socket->close();
 }
 
 
@@ -124,10 +125,6 @@ qint64 TcpClient::Send(int len, char *p)
 void TcpClient::connected()
 {
     qDebug() << "Class TcpClient - Connected!";
-
-    QTimer *timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), this, SLOT(LoopPacote()));
-    timer->start(10);
 }
 
 void TcpClient::disconnected()
