@@ -8,52 +8,35 @@ TcpClient::TcpClient(QObject *parent,
 {
     Porta = porta;
     Servidor = servidor;
-    Finalizar = false;
 }
 
 TcpClient::~TcpClient()
 {
-    Finaliza();
+    finalizar();
 }
 
 void TcpClient::startconnection()
 {
-    qDebug("TcpClient " Q_FUNC_INFO );
+    qDebug("TcpClient startconnection");
     connect(socket, &QAbstractSocket::connected, this, &TcpClient::connected);
     connect(socket, &QAbstractSocket::disconnected, this, &TcpClient::disconnected);
     connect(socket, &QIODevice::readyRead, this, &TcpClient::readData);
     connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
     connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &TcpClient::displayError);
     Open();
-
-    // Ao Criar este thread, para enviar os dados via LoopPacote(),
-    // a classe deixa de receber os dados do Server
-    //QThread *thread = new QThread();
-    //moveToThread(thread);
-
-    //QObject::connect(thread, SIGNAL(started()), this, SLOT(LoopPacote()));
-    //thread->start();
 }
 
 void TcpClient::LoopPacote()
 {
-    qDebug("TcpClient " Q_FUNC_INFO );
-    for (;!Finalizar;)
+    LockList.lock();
+    for(;!ListPacotes.isEmpty();)
     {
-        LockSend.lock();
-        if(!ListPacotes.isEmpty())
-        {
-            QByteArray data = ListPacotes.at(0);
-
-            qDebug() << "send... " << data;
-
-            Send(data);
-            ListPacotes.removeAt(0);
-        }
-        LockSend.unlock();
-        QThread::msleep(10);
+        QByteArray data = ListPacotes.at(0);
+        qDebug() << "TcpClient LoopPacote " << data;
+        Send(data);
+        ListPacotes.removeAt(0);
     }
-    emit finished();
+    LockList.unlock();
 }
 
 bool TcpClient::Open()
@@ -65,7 +48,7 @@ bool TcpClient::Open()
         if(!socket->waitForConnected(5000))
         {
             qDebug() << "socket Error: " << socket->errorString();
-            Finaliza();
+            finalizar();
         }
         else {
             ret = true;
@@ -75,7 +58,7 @@ bool TcpClient::Open()
     catch (std::exception & e)
     {
         qDebug() << "connection Error: " << e.what();
-        Finaliza();
+        finalizar();
         return ret;
     }
 }
@@ -91,31 +74,24 @@ void TcpClient::ReadDataUser()
     qDebug() << "ReadDataUser " << s_data;
 }
 
-/*void TcpClient::CloseSocket()
+void TcpClient::finalizar()
 {
-    qDebug() << "close socket" << socket;
-    if(socket != nullptr)
-    {
-        socket->close();
-        delete socket;
-        socket = nullptr;
-    }
-}*/
-
-void TcpClient::Finaliza()
-{
-    Finalizar = true;
+    qDebug() << "TcpClient::finalizar()";
 }
 
 
 void TcpClient::SetPacote(int len, char *p)
 {
+    qDebug() << "TcpClient SetPacote " << p;
     QByteArray data(p, len);
-    Send(len, p);
+    LockList.lock();
+    ListPacotes.append(data);
+    LockList.unlock();
 }
 
 qint64 TcpClient::Send(QByteArray data)
 {
+    LockSend.lock();
     qint64 bytesSend = socket->write(data.data(), data.size());
     socket->flush();
     while(socket->bytesToWrite() > 0)
@@ -124,6 +100,7 @@ qint64 TcpClient::Send(QByteArray data)
         socket->flush();
         socket->waitForBytesWritten();
     }
+    LockSend.unlock();
     return bytesSend;
 }
 
@@ -132,20 +109,12 @@ qint64 TcpClient::Send(int len, char *p)
     try
     {
         QByteArray data(p, len);
-        qint64 bytesSend = socket->write(data.data(), data.size());
-        socket->flush();
-        while(socket->bytesToWrite() > 0)
-        {
-            bytesSend += socket->write( data.data()+bytesSend, data.size()-bytesSend );
-            socket->flush();
-            socket->waitForBytesWritten();
-        }
-        return bytesSend;
+        return Send(data);
     }
     catch (std::exception & e)
     {
         qDebug() << "write Error: " << e.what();
-        Finaliza();
+        finalizar();
         //TODO: Verificar se é necessário chamar o signal disconnected()
         //disconnected();
         return -1;
@@ -155,6 +124,10 @@ qint64 TcpClient::Send(int len, char *p)
 void TcpClient::connected()
 {
     qDebug() << "Class TcpClient - Connected!";
+
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(LoopPacote()));
+    timer->start(10);
 }
 
 void TcpClient::disconnected()

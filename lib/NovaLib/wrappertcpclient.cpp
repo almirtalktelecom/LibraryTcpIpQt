@@ -1,9 +1,11 @@
 #include "wrappertcpclient.h"
 
-#define VERSAO 36
+#define VERSAO 55
 
 QThread *thread = nullptr;
 TcpClient *client = nullptr;
+
+QCoreApplication *appMain = nullptr;
 
 char **SetArgv(int qtos, ...);
 
@@ -31,13 +33,12 @@ int InitClientExt(int porta, char *servidor)
     int len = 1;
     char **argv = SetArgv(len, "LibraryQTCti");
     QCoreApplication app(len, argv);
+    appMain = &app;
 
     thread = new QThread();
     client = new TcpClient(nullptr, quint16(porta), servidor);
 
-    //client->moveToThread(thread);
     //connect(client, SIGNAL(error(QString)), this, SLOT(errorString(QString)));
-
     QObject::connect(thread, SIGNAL(started()), client, SLOT(startconnection()));
     QObject::connect(client, SIGNAL(finished()), thread, SLOT(quit()));
     QObject::connect(client, SIGNAL(finished()), client, SLOT(deleteLater()));
@@ -45,6 +46,19 @@ int InitClientExt(int porta, char *servidor)
 
     thread->start();
     return app.exec();
+}
+
+///
+/// \brief FinalizaClientExt
+///
+void FinalizaClientExt()
+{
+    if(appMain != nullptr)
+    {
+        qDebug("EXIT %d", VERSAO);
+        client->finalizar();
+        appMain->quit();
+    }
 }
 
 ///
@@ -58,10 +72,10 @@ void SetPacote(int len, char *p)
     if(client != nullptr)
     {
         // Envia os dados via LoopPacote()
-        //client->SetPacote(len, p);
+        client->SetPacote(len, p);
 
         // Envia os dados diretamente pelo socket
-        client->Send(len, p);
+        //client->Send(len, p);
     }
 }
 

@@ -10,6 +10,7 @@
 #include <QMutex>
 #include <QThread>
 #include <QMetaProperty>
+#include <QTimer>
 
 class NOVALIBSHARED_EXPORT TcpClient : public QObject
 {
@@ -26,8 +27,6 @@ public:
     QString Servidor;
 
     bool Open();
-    //void CloseSocket();
-    void Finaliza();
 
     qint64 Send(int len, char *p);
     qint64 Send(QByteArray data);
@@ -44,14 +43,16 @@ public slots:
     void bytesWritten(qint64 bytes);
     void displayError(QAbstractSocket::SocketError socketError);
     void LoopPacote();
+    void finalizar();
 
 signals:
 
     void finished();
 
 private:
-    bool Finalizar;
+    QMutex LockList;
     QMutex LockSend;
+
     QTcpSocket *socket = nullptr;
 };
 
