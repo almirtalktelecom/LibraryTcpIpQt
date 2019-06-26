@@ -16,11 +16,11 @@ extern "C" {
 
 extern __declspec(dllexport) TcpClient* CreateTcpClient(int porta, char *servidor);
 
-extern __declspec(dllexport) int InitClientExt(int porta, char *servidor);
+extern __declspec(dllexport) int InitClient(int porta, char *servidor);
 
-extern __declspec(dllexport) void FinalizaClientExt();
+extern __declspec(dllexport) void FinalizaClient();
 
-extern __declspec(dllexport) void SetPacote(int len, char *p);
+extern __declspec(dllexport) void EnviaPacote(int len, char *p);
 
 #ifdef __cplusplus
 }

@@ -21,7 +21,6 @@ TcpClient::TcpClient(QObject *parent,
 ///
 TcpClient::~TcpClient()
 {
-    finalizar();
 }
 
 ///
@@ -29,11 +28,11 @@ TcpClient::~TcpClient()
 ///
 void TcpClient::startconnection()
 {
-    qDebug("TcpClient startconnection");
     connect(socket, &QAbstractSocket::connected, this, &TcpClient::connected);
     connect(socket, &QAbstractSocket::disconnected, this, &TcpClient::disconnected);
     connect(socket, &QIODevice::readyRead, this, &TcpClient::readData);
     connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
+    connect(socket, SIGNAL(destroyed()),this, SLOT(destroyed()));
     connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &TcpClient::displayError);
     Open();
 }
@@ -77,7 +76,7 @@ void TcpClient::ReadDataUser()
         dados.append(socket->readAll());
     }
     QString s_data = QString::fromStdString(dados.data());
-    qDebug() << "ReadDataUser " << s_data;
+    qDebug() << s_data;
 }
 
 ///
@@ -85,8 +84,16 @@ void TcpClient::ReadDataUser()
 ///
 void TcpClient::finalizar()
 {
-    qDebug() << "TcpClient::finalizar()";
-    socket->close();
+    LockSocket.lock();
+    if(socket)
+    {
+        if(socket->isOpen())
+        {
+            socket->close();
+            socket->deleteLater();
+        }
+    }
+    LockSocket.unlock();
 }
 
 ///
@@ -119,16 +126,20 @@ qint64 TcpClient::Send(int len, char *p)
 ///
 qint64 TcpClient::Send(QByteArray data)
 {
-    LockSend.lock();
-    qint64 bytesSend = socket->write(data.data(), data.size());
-    socket->flush();
-    while(socket->bytesToWrite() > 0)
+    LockSocket.lock();
+    qint64 bytesSend = 0;
+    if(socket->isOpen())
     {
-        bytesSend += socket->write( data.data()+bytesSend, data.size()-bytesSend );
+        bytesSend = socket->write(data.data(), data.size());
         socket->flush();
-        socket->waitForBytesWritten();
+        while(socket->bytesToWrite() > 0)
+        {
+            bytesSend += socket->write( data.data()+bytesSend, data.size()-bytesSend );
+            socket->flush();
+            socket->waitForBytesWritten();
+        }
     }
-    LockSend.unlock();
+    LockSocket.unlock();
     return bytesSend;
 }
 
@@ -163,6 +174,14 @@ void TcpClient::readData()
 void TcpClient::bytesWritten(qint64 bytes)
 {
     qDebug() << "bytesWritten " << bytes;
+}
+
+///
+/// \brief TcpClient::destroyed
+///
+void TcpClient::destroyed()
+{
+    qDebug() << "destroyed";
 }
 
 ///

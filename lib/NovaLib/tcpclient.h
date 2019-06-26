@@ -3,14 +3,9 @@
 
 #include "novalib_global.h"
 
-#include <QObject>
-#include <QDebug>
 #include <QTcpSocket>
-#include <QAbstractSocket>
 #include <QMutex>
 #include <QThread>
-#include <QMetaProperty>
-#include <QTimer>
 
 class NOVALIBSHARED_EXPORT TcpClient : public QObject
 {
@@ -25,9 +20,7 @@ public:
     QString Servidor;
 
     bool Open();
-
     void ReadDataUser();
-    void SetPacote(int len, char *p);
 
 public slots:
 
@@ -41,6 +34,8 @@ public slots:
     qint64 Send(int len, char *p);
     qint64 Send(QByteArray data);
 
+    void destroyed();
+
 signals:
 
     void encerra();
@@ -48,8 +43,7 @@ signals:
     qint64 enviaPacote(QByteArray data);
 
 private:
-    QMutex LockSend;
-
+    QMutex LockSocket;
     QTcpSocket *socket = nullptr;
 };
 
