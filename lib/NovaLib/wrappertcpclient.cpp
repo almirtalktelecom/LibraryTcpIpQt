@@ -1,6 +1,6 @@
 #include "wrappertcpclient.h"
 
-#define VERSAO 67
+#define VERSAO 72
 
 QThread *thread = nullptr;
 TcpClient *client = nullptr;
@@ -45,7 +45,7 @@ int InitClientExt(int porta, char *servidor)
     QObject::connect(client, SIGNAL(finished()), thread, SLOT(quit()));
     QObject::connect(client, SIGNAL(finished()), client, SLOT(deleteLater()));
     QObject::connect(client, SIGNAL(encerra()), client, SLOT(finalizar()));
-    QObject::connect(client, SIGNAL(enviaPacote()), client, SLOT(LoopPacote()));
+    QObject::connect(client, SIGNAL(enviaPacote(QByteArray)), client, SLOT(Send(QByteArray)));
 
     thread->start();
     return app.exec();
@@ -83,9 +83,11 @@ void SetPacote(int len, char *p)
     if(client != nullptr)
     {
         // Set os dados
-        client->SetPacote(len, p);
+        //client->SetPacote(len, p);
         // e chama o slot para enviar
-        emit client->enviaPacote();
+        QByteArray data(p, len);
+        qDebug() << "enviaPacote " << data;
+        emit client->enviaPacote(data);
     }
 }
 

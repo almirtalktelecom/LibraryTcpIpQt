@@ -1,5 +1,11 @@
 #include "tcpclient.h"
 
+///
+/// \brief TcpClient::TcpClient
+/// \param parent
+/// \param porta
+/// \param servidor
+///
 TcpClient::TcpClient(QObject *parent,
                      quint16 porta,
                      QString servidor)
@@ -10,11 +16,17 @@ TcpClient::TcpClient(QObject *parent,
     Servidor = servidor;
 }
 
+///
+/// \brief TcpClient::~TcpClient
+///
 TcpClient::~TcpClient()
 {
     finalizar();
 }
 
+///
+/// \brief TcpClient::startconnection
+///
 void TcpClient::startconnection()
 {
     qDebug("TcpClient startconnection");
@@ -26,19 +38,10 @@ void TcpClient::startconnection()
     Open();
 }
 
-void TcpClient::LoopPacote()
-{
-    LockList.lock();
-    for(;!ListPacotes.isEmpty();)
-    {
-        QByteArray data = ListPacotes.at(0);
-        qDebug() << "TcpClient LoopPacote " << data;
-        Send(data);
-        ListPacotes.removeAt(0);
-    }
-    LockList.unlock();
-}
-
+///
+/// \brief TcpClient::Open
+/// \return
+///
 bool TcpClient::Open()
 {
     bool ret = false;
@@ -63,6 +66,9 @@ bool TcpClient::Open()
     }
 }
 
+///
+/// \brief TcpClient::ReadDataUser
+///
 void TcpClient::ReadDataUser()
 {
     QByteArray dados;
@@ -74,37 +80,21 @@ void TcpClient::ReadDataUser()
     qDebug() << "ReadDataUser " << s_data;
 }
 
+///
+/// \brief TcpClient::finalizar
+///
 void TcpClient::finalizar()
 {
     qDebug() << "TcpClient::finalizar()";
     socket->close();
 }
 
-
-void TcpClient::SetPacote(int len, char *p)
-{
-    qDebug() << "TcpClient SetPacote " << p;
-    QByteArray data(p, len);
-    LockList.lock();
-    ListPacotes.append(data);
-    LockList.unlock();
-}
-
-qint64 TcpClient::Send(QByteArray data)
-{
-    LockSend.lock();
-    qint64 bytesSend = socket->write(data.data(), data.size());
-    socket->flush();
-    while(socket->bytesToWrite() > 0)
-    {
-        bytesSend += socket->write( data.data()+bytesSend, data.size()-bytesSend );
-        socket->flush();
-        socket->waitForBytesWritten();
-    }
-    LockSend.unlock();
-    return bytesSend;
-}
-
+///
+/// \brief TcpClient::Send
+/// \param len
+/// \param p
+/// \return
+///
 qint64 TcpClient::Send(int len, char *p)
 {
     try
@@ -122,27 +112,63 @@ qint64 TcpClient::Send(int len, char *p)
     }
 }
 
+///
+/// \brief TcpClient::Send
+/// \param data
+/// \return
+///
+qint64 TcpClient::Send(QByteArray data)
+{
+    LockSend.lock();
+    qint64 bytesSend = socket->write(data.data(), data.size());
+    socket->flush();
+    while(socket->bytesToWrite() > 0)
+    {
+        bytesSend += socket->write( data.data()+bytesSend, data.size()-bytesSend );
+        socket->flush();
+        socket->waitForBytesWritten();
+    }
+    LockSend.unlock();
+    return bytesSend;
+}
+
+///
+/// \brief TcpClient::connected
+///
 void TcpClient::connected()
 {
     qDebug() << "Class TcpClient - Connected!";
 }
 
+///
+/// \brief TcpClient::disconnected
+///
 void TcpClient::disconnected()
 {
     qDebug() << "Class TcpClient - disconnected!";
 }
 
+///
+/// \brief TcpClient::readData
+///
 void TcpClient::readData()
 {
     ReadDataUser();
 }
 
+///
+/// \brief TcpClient::bytesWritten
+/// \param bytes
+///
 void TcpClient::bytesWritten(qint64 bytes)
 {
     qDebug() << "bytesWritten " << bytes;
 }
 
-
+///
+/// \brief TcpClient::displayError
+/// \param socketError
+///
 void TcpClient::displayError(QAbstractSocket::SocketError socketError)
 {
     switch (socketError)
