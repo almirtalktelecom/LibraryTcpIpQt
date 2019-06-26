@@ -30,7 +30,7 @@ void TcpClient::startconnection()
 {
     connect(socket, &QAbstractSocket::connected, this, &TcpClient::connected);
     connect(socket, &QAbstractSocket::disconnected, this, &TcpClient::disconnected);
-    connect(socket, &QIODevice::readyRead, this, &TcpClient::readData);
+    connect(socket, &QIODevice::readyRead, this, &TcpClient::readyRead);
     connect(socket, SIGNAL(bytesWritten(qint64)),this, SLOT(bytesWritten(qint64)));
     connect(socket, SIGNAL(destroyed()),this, SLOT(destroyed()));
     connect(socket, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error),this, &TcpClient::displayError);
@@ -50,7 +50,7 @@ bool TcpClient::Open()
         if(!socket->waitForConnected(5000))
         {
             qDebug() << "socket Error: " << socket->errorString();
-            finalizar();
+            finaliza();
         }
         else {
             ret = true;
@@ -60,29 +60,15 @@ bool TcpClient::Open()
     catch (std::exception & e)
     {
         qDebug() << "connection Error: " << e.what();
-        finalizar();
+        finaliza();
         return ret;
     }
 }
 
 ///
-/// \brief TcpClient::ReadDataUser
-///
-void TcpClient::ReadDataUser()
-{
-    QByteArray dados;
-    while (socket->bytesAvailable())
-    {
-        dados.append(socket->readAll());
-    }
-    QString s_data = QString::fromStdString(dados.data());
-    qDebug() << s_data;
-}
-
-///
 /// \brief TcpClient::finalizar
 ///
-void TcpClient::finalizar()
+void TcpClient::finaliza()
 {
     LockSocket.lock();
     if(socket)
@@ -112,7 +98,7 @@ qint64 TcpClient::Send(int len, char *p)
     catch (std::exception & e)
     {
         qDebug() << "write Error: " << e.what();
-        finalizar();
+        finaliza();
         //TODO: Verificar se é necessário chamar o signal disconnected()
         //disconnected();
         return -1;
@@ -149,6 +135,7 @@ qint64 TcpClient::Send(QByteArray data)
 void TcpClient::connected()
 {
     qDebug() << "Class TcpClient - Connected!";
+    emit conectado();
 }
 
 ///
@@ -160,11 +147,17 @@ void TcpClient::disconnected()
 }
 
 ///
-/// \brief TcpClient::readData
+/// \brief TcpClient::readyRead
 ///
-void TcpClient::readData()
+void TcpClient::readyRead()
 {
-    ReadDataUser();
+    QByteArray dados;
+    while (socket->bytesAvailable())
+    {
+        dados.append(socket->readAll());
+    }
+    QString s_data = QString::fromStdString(dados.data());
+    qDebug() << s_data;
 }
 
 ///
@@ -182,6 +175,7 @@ void TcpClient::bytesWritten(qint64 bytes)
 void TcpClient::destroyed()
 {
     qDebug() << "destroyed";
+    emit finalizado();
 }
 
 ///

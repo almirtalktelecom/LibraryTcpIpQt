@@ -13,24 +13,26 @@ class NOVALIBSHARED_EXPORT TcpClient : public QObject
 
 public:
 
-    TcpClient(QObject *parent = nullptr,quint16 porta = 0,QString servidor = nullptr);
-    ~TcpClient();
-
     quint16 Porta = 0;
     QString Servidor;
 
+    TcpClient(QObject *parent = nullptr,quint16 porta = 0,QString servidor = nullptr);
+    ~TcpClient();
+
     bool Open();
-    void ReadDataUser();
 
 public slots:
 
     void startconnection();
+    void finaliza();
+
     void connected();
     void disconnected();
-    void readData();
+    void readyRead();
     void bytesWritten(qint64 bytes);
+
     void displayError(QAbstractSocket::SocketError socketError);
-    void finalizar();
+
     qint64 Send(int len, char *p);
     qint64 Send(QByteArray data);
 
@@ -38,9 +40,13 @@ public slots:
 
 signals:
 
-    void encerra();
-    void finished();
+    void conectado();
+
+    void setFinaliza();
+    void finalizado();
     qint64 enviaPacote(QByteArray data);
+
+    void socketError(QString s);
 
 private:
     QMutex LockSocket;
